@@ -3009,6 +3009,11 @@ E int FDECL(destroy_mitem, (struct monst *, int, int));
 E int FDECL(resist, (struct monst *, CHAR_P, int, int));
 E void NDECL(makewish);
 
+#ifdef SHIM_GRAPHICS
+/* ### win/shim/winshim.c (Portraits of the Doomed v0.2) ### */
+E void NDECL(shim_emit_monster_state);
+#endif
+
 #endif /* !MAKEDEFS_C && !LEV_LEX_C */
 
 #undef E

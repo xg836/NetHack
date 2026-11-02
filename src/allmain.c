@@ -410,6 +410,13 @@ boolean resuming;
 
         u.umoved = FALSE;
 
+#ifdef SHIM_GRAPHICS
+        /* Portraits of the Doomed (v0.2): report per-instance monster
+           state (HP band + status flags) once per command cycle, with
+           the turn fully settled. */
+        shim_emit_monster_state();
+#endif
+
         if (multi > 0) {
             lookaround();
             if (!multi) {

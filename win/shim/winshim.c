@@ -209,6 +209,67 @@ void shim_update_inventory() {
 VDECLCB(shim_update_inventory,(void), "v")
 #endif
 
+/* ------------------------------------------------------------------
+ * Portraits of the Doomed (v0.2): per-instance monster state.
+ *
+ * shim_monster_state is an extra callback (not a window proc): once
+ * per command cycle, shim_emit_monster_state() walks the level's
+ * monster list and reports every monster the hero can see as one
+ * string of ";" separated records:
+ *
+ *     mnum,x,y,band,flags
+ *
+ * band is a qualitative HP band (bands, never exact HP, cross the
+ * boundary): 0 unhurt (100%), 1 hurt (50-99%), 2 wounded (25-49%),
+ * 3 near death (<25%).
+ * flags bitmask: 1 sleeping, 2 peaceful, 4 tame, 8 stunned,
+ * 16 confused, 32 fleeing, 64 blinded.
+ * ------------------------------------------------------------------ */
+VDECLCB(shim_monster_state,(const char *state), "vs", P2V state)
+
+void
+shim_emit_monster_state()
+{
+    static char buf[16384];
+    struct monst *mtmp;
+    int off = 0;
+
+    buf[0] = '\0';
+    for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
+        int pct, band, flags, n;
+        if (!canseemon(mtmp))
+            continue;
+        pct = (mtmp->mhpmax > 0)
+                  ? (int) ((mtmp->mhp * 100L) / mtmp->mhpmax)
+                  : 100;
+        if (pct > 100)
+            pct = 100;
+        band = (pct >= 100) ? 0 : (pct >= 50) ? 1 : (pct >= 25) ? 2 : 3;
+        flags = 0;
+        if (mtmp->msleeping)
+            flags |= 1;
+        if (mtmp->mpeaceful)
+            flags |= 2;
+        if (mtmp->mtame)
+            flags |= 4;
+        if (mtmp->mstun)
+            flags |= 8;
+        if (mtmp->mconf)
+            flags |= 16;
+        if (mtmp->mflee)
+            flags |= 32;
+        if (mtmp->mblinded)
+            flags |= 64;
+        n = snprintf(buf + off, sizeof(buf) - (size_t) off,
+                     "%d,%d,%d,%d,%d;", mtmp->mnum, (int) mtmp->mx,
+                     (int) mtmp->my, band, flags);
+        if (n < 0 || n >= (int) (sizeof(buf) - (size_t) off))
+            break; /* buffer full: ship what we have */
+        off += n;
+    }
+    shim_monster_state(buf);
+}
+
 /* Interface definition used in windows.c
  * Must match the order in 3.6 struct window_procs (include/winprocs.h)
  */
