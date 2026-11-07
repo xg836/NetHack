@@ -52,6 +52,19 @@ web client as strings:
    portrait plus the cause line for monster kills, the cause line
    alone otherwise.
 
+One further fix, also Stage D:
+
+3. **The windowed endgame restored** — real window ports set
+   `iflags.window_inited` in their init routine (compare
+   `tty_init_nhwindows`). The shim port's init is a JavaScript
+   forwarder and never sets it, so `really_done` ran with
+   `have_windows` false: the tombstone/summary window was skipped
+   and `exit_nhwindows` was never called, leaving web clients with
+   no signal that the game had ended. The two mains
+   (`sys/unix/unixmain.c`, `sys/libnh/libnhmain.c`) now set the
+   flag immediately after `init_nhwindows`, exactly as if the port
+   had done it itself.
+
 ## Files changed
 
 - `win/shim/winshim.c` — both callbacks and their emitters.
@@ -60,10 +73,12 @@ web client as strings:
   in `moveloop`, with the turn fully settled.
 - `src/end.c` — the killing monster's species noted in `done_in_by`;
   the death-cause emitter called at the top of `really_done`.
+- `sys/unix/unixmain.c`, `sys/libnh/libnhmain.c` — set
+  `iflags.window_inited` after `init_nhwindows` (fix 3 above).
 
 Each changed file carries a "Portraits of the Doomed (v0.2)" notice
 at the change site. Nothing else in the tree is modified; comments
-aside, the patch is exactly these four files.
+aside, the patch is exactly these six files.
 
 ## Building
 
