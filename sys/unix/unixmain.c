@@ -205,6 +205,13 @@ char *argv[];
     commit_windowchain();
 #endif
     init_nhwindows(&argc, argv); /* now we can set up window system */
+    /* Portraits of the Doomed (v0.2, Stage D — endgame fix): real ports
+       set iflags.window_inited in their init (cf. tty_init_nhwindows);
+       the shim port's init is a JavaScript forwarder and never does,
+       which silently disables the whole windowed endgame in
+       really_done() (no tombstone window, exit_nhwindows never called).
+       Set it here. */
+    iflags.window_inited = 1;
 #ifdef _M_UNIX
     init_sco_cons();
 #endif
