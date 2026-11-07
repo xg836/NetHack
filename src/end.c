@@ -501,6 +501,9 @@ int how;
     }
 
     Strcpy(killer.name, buf);
+    /* Portraits of the Doomed (v0.2, Stage D): note the killing
+       monster's species for the death-cause callback. */
+    shim_note_killer_mon((int) mtmp->mnum);
     /*
      * Chicken and egg issue:
      *  Ordinarily Unchanging ought to override something like this,
@@ -1216,6 +1219,9 @@ int how;
     long umoney;
     long tmp;
 
+    /* Portraits of the Doomed (v0.2, Stage D): report the engine's
+       death attribution exactly once per actual death. */
+    shim_emit_death_cause(how);
     /*
      *  The game is now over...
      */

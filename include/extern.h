@@ -3012,6 +3012,9 @@ E void NDECL(makewish);
 #ifdef SHIM_GRAPHICS
 /* ### win/shim/winshim.c (Portraits of the Doomed v0.2) ### */
 E void NDECL(shim_emit_monster_state);
+/* Portraits of the Doomed (v0.2, Stage D — death-cause reporting) */
+E void FDECL(shim_note_killer_mon, (int));
+E void FDECL(shim_emit_death_cause, (int));
 #endif
 
 #endif /* !MAKEDEFS_C && !LEV_LEX_C */

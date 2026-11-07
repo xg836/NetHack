@@ -270,6 +270,48 @@ shim_emit_monster_state()
     shim_monster_state(buf);
 }
 
+/* ------------------------------------------------------------------
+ * Portraits of the Doomed (v0.2, Stage D — death-cause reporting):
+ *
+ * shim_death_cause is an extra callback (not a window proc): once per
+ * actual death, shim_emit_death_cause() reports the engine's own death
+ * attribution — the same record the tombstone and logfile are built
+ * from — as one pipe-separated string:
+ *
+ *     how|format|mnum|name
+ *
+ * how is the enum game_end_types value; only true deaths (DIED through
+ * GENOCIDED, i.e. below PANICKED) are reported. format is the killer
+ * format code (KILLED_BY_AN / KILLED_BY / NO_KILLER_PREFIX). mnum is
+ * the killing monster's species when death came through done_in_by()
+ * (noted there by shim_note_killer_mon), else -1. name is killer.name
+ * verbatim.
+ * ------------------------------------------------------------------ */
+VDECLCB(shim_death_cause,(const char *record), "vs", P2V record)
+
+static int shim_killer_mnum = -1;
+
+void
+shim_note_killer_mon(mnum)
+int mnum;
+{
+    shim_killer_mnum = mnum;
+}
+
+void
+shim_emit_death_cause(how)
+int how;
+{
+    static char buf[BUFSZ + 64];
+
+    if (how < DIED || how > GENOCIDED)
+        return;
+    (void) snprintf(buf, sizeof buf, "%d|%d|%d|%s", how, killer.format,
+                    shim_killer_mnum, killer.name);
+    shim_killer_mnum = -1;
+    shim_death_cause(buf);
+}
+
 /* Interface definition used in windows.c
  * Must match the order in 3.6 struct window_procs (include/winprocs.h)
  */

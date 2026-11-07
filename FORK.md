@@ -15,31 +15,55 @@ is public, as the NetHack General Public License expects.
 
 ## What the patch does
 
-One addition: the `shim_monster_state` callback. Once per command
-cycle, the engine reports every monster the hero can see as a string
-of `mnum,x,y,band,flags` records:
+Two extra callbacks (neither is a window proc), both reported to the
+web client as strings:
 
-- **band** — a qualitative HP band (0 unhurt, 1 hurt, 2 wounded,
-  3 near death), computed inside the engine in C. Exact hit points
-  never cross into JavaScript; the game deliberately shows bands,
-  not numbers.
-- **flags** — a status bitmask: 1 sleeping, 2 peaceful, 4 tame,
-  8 stunned, 16 confused, 32 fleeing, 64 blinded.
+1. **`shim_monster_state`** — once per command cycle, the engine
+   reports every monster the hero can see as a string of
+   `mnum,x,y,band,flags` records:
 
-The web client uses this to render live condition bands and status
-badges in its portrait gallery.
+   - **band** — a qualitative HP band (0 unhurt, 1 hurt, 2 wounded,
+     3 near death), computed inside the engine in C. Exact hit points
+     never cross into JavaScript; the game deliberately shows bands,
+     not numbers.
+   - **flags** — a status bitmask: 1 sleeping, 2 peaceful, 4 tame,
+     8 stunned, 16 confused, 32 fleeing, 64 blinded.
+
+   The web client uses this to render live condition bands and status
+   badges in its portrait gallery.
+
+2. **`shim_death_cause`** (Stage D) — once per actual death, the
+   engine reports its own death attribution — the same record the
+   tombstone and logfile are built from — as one pipe-separated
+   string, `how|format|mnum|name`:
+
+   - **how** — the `enum game_end_types` value; only true deaths
+     (DIED through GENOCIDED) are reported, never quits, escapes, or
+     ascensions. Averted deaths (life-saving, wizard refusal) do not
+     fire it: the emitter sits at the top of `really_done`, which is
+     reached only when the death actually happens.
+   - **format** — the killer format code (KILLED_BY_AN / KILLED_BY /
+     NO_KILLER_PREFIX).
+   - **mnum** — the killing monster's species when the death came
+     through `done_in_by`, else -1.
+   - **name** — `killer.name` verbatim.
+
+   The web client uses this to build the death screen: the killer's
+   portrait plus the cause line for monster kills, the cause line
+   alone otherwise.
 
 ## Files changed
 
-- `win/shim/winshim.c` — the callback and the emitter that walks
-  the level's monster list.
-- `include/extern.h` — the emitter's declaration.
-- `src/allmain.c` — one call per command cycle in `moveloop`, with
-  the turn fully settled.
+- `win/shim/winshim.c` — both callbacks and their emitters.
+- `include/extern.h` — the emitters' declarations.
+- `src/allmain.c` — one `shim_monster_state` call per command cycle
+  in `moveloop`, with the turn fully settled.
+- `src/end.c` — the killing monster's species noted in `done_in_by`;
+  the death-cause emitter called at the top of `really_done`.
 
 Each changed file carries a "Portraits of the Doomed (v0.2)" notice
 at the change site. Nothing else in the tree is modified; comments
-aside, the patch is exactly these three files.
+aside, the patch is exactly these four files.
 
 ## Building
 
